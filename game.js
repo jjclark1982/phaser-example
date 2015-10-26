@@ -5,6 +5,7 @@ var scoreText;
 var player;
 var platforms;
 var coins;
+var ufo;
 var cursors;
 var jumpButton;
 
@@ -36,6 +37,7 @@ state.preload = function(game) {
     game.load.spritesheet('player', 'games/starstruck/dude.png', 32, 48);
     game.load.image('platform', 'sprites/platform.png');
     game.load.spritesheet('coin', 'sprites/coin.png', 32, 32);
+    game.load.image('ufo', 'sprites/ufo.png');
 };
 
 state.create = function(game) {
@@ -61,18 +63,28 @@ state.create = function(game) {
 
     // create one coin on each platform
     coins = game.add.physicsGroup();
+    ufos = game.add.physicsGroup();
     platforms.forEachAlive(function(platform){
         var coin = coins.create(platform.x + Math.random()*(platform.width-32), platform.y - 50, 'coin');
         coin.animations.add('spin', null, 10, true);
         coin.play('spin');
         coin.body.gravity.y = 500;
+
+        var ufo = ufos.create(platform.x + Math.random()*(platform.width-32), platform.y - 100, 'ufo');
+        ufo.body.gravity.y = 500;        
     });
 
 };
 
+function gameOver() {
+    player.kill();
+    title.text = "Game Over";
+}
+
 state.update = function(game) {
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(coins, platforms);
+    game.physics.arcade.collide(ufos, platforms);
 
     // walk left and right
     if (cursors.left.isDown) {
@@ -103,9 +115,23 @@ state.update = function(game) {
 
     // fall off the bottom
     if (player.alive && player.y > game.height) {
-        player.kill();
-        title.text = "Game Over";
+        gameOver();
     }
+
+    // move ufos
+    ufos.forEachAlive(function(ufo) {
+        if (ufo.body.touching.down) {
+            ufo.body.velocity.y = -300; // bounce
+        }
+        if (player.position.distance(ufo.position) < 30) {
+            if (player.bottom < ufo.bottom) {
+                ufo.kill();
+            }
+            else {
+                gameOver();            
+            }
+        }
+    });
 
     // collect coins
     coins.forEachAlive(function(coin){
@@ -127,6 +153,7 @@ state.update = function(game) {
             emitter.start(true, 5000, null, 5);
             emitter.forEach(function(particle){
                 particle.scale = new Phaser.Point(.2,.5);
+                window.lastParticle = particle;
             });
 
             platform.x = platform.left + platform.width*2;
