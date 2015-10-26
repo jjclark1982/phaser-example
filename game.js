@@ -122,6 +122,13 @@ state.update = function(game) {
     // remove old platforms and coins
     platforms.forEachExists(function(platform){
         if (platform.right < player.left - 100) {
+            var emitter = game.add.emitter(platform.right, platform.y, 200);
+            emitter.makeParticles('platform');
+            emitter.start(true, 5000, null, 5);
+            emitter.forEach(function(particle){
+                particle.scale = new Phaser.Point(.2,.5);
+            });
+
             platform.x = platform.left + platform.width*2;
             platform.y = 300 + Math.random()*300;
             var coin = coins.create(platform.x + Math.random()*(platform.width-32), platform.y - 50, 'coin');

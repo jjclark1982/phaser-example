@@ -29,6 +29,7 @@
         el.className = 'error';
         el.textContent = msg;
         document.getElementById('notices').appendChild(el);
+        el.onclick = function(){el.remove();};
       };
     </script>
     <script src="phaser.js"></script>
