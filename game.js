@@ -8,6 +8,9 @@ var coins;
 var ufo;
 var cursors;
 var jumpButton;
+var sky;
+var nearClouds;
+var farClouds;
 
 state.preload = function(game) {
     if (Phaser.Plugin.Debug) {
@@ -38,9 +41,27 @@ state.preload = function(game) {
     game.load.image('platform', 'sprites/platform.png');
     game.load.spritesheet('coin', 'sprites/coin.png', 32, 32);
     game.load.image('ufo', 'sprites/ufo.png');
+    game.load.image('sky', 'skies/deepblue.png');
+    game.load.image('cloud', 'particles/cloud.png');
 };
 
 state.create = function(game) {
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+
+    // place the background.
+    // it's slightly bigger than 800x600 in case it lags behind the camera.
+    sky = game.add.tileSprite(0,300, 850, 600, 'sky');
+    sky.anchor.set(0.5);
+
+    farClouds = game.add.tileSprite(0,225, 1100, 128, 'cloud');
+    farClouds.anchor.set(0.5);
+    farClouds.scale.x = 0.75;
+    farClouds.scale.y = 0.75;
+
+    nearClouds = game.add.tileSprite(0,100, 850, 128, 'cloud');
+    nearClouds.anchor.set(0.5);
+
+    
     // create the player
     player = game.add.sprite(100, 200, 'player');
     player.animations.add('left', [0, 1, 2, 3], 10, true);
@@ -167,7 +188,13 @@ state.update = function(game) {
 };
 
 state.render = function(game) {
+    sky.position = game.camera.position;
 
+    nearClouds.position.x = game.camera.position.x;
+    nearClouds.tilePosition.x = -game.camera.position.x/2;
+
+    farClouds.position.x = game.camera.position.x;
+    farClouds.tilePosition.x = -game.camera.position.x/2;
 };
 
 var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-game', state);
