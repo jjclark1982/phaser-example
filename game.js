@@ -11,6 +11,7 @@ var jumpButton;
 var sky;
 var nearClouds;
 var farClouds;
+var fgClouds;
 
 state.preload = function(game) {
     if (Phaser.Plugin.Debug) {
@@ -53,22 +54,20 @@ state.create = function(game) {
     sky = game.add.tileSprite(0,300, 850, 600, 'sky');
     sky.anchor.set(0.5);
 
-    farClouds = game.add.tileSprite(0,225, 1100, 128, 'cloud');
+    farClouds = game.add.tileSprite(0,180, 1100, 128, 'cloud');
     farClouds.anchor.set(0.5);
-    farClouds.scale.x = 0.75;
-    farClouds.scale.y = 0.75;
+    farClouds.scale = new Phaser.Point(0.75, 0.75);
 
     nearClouds = game.add.tileSprite(0,100, 850, 128, 'cloud');
     nearClouds.anchor.set(0.5);
-
     
     // create the player
-    player = game.add.sprite(100, 200, 'player');
+    player = game.add.sprite(100, 100, 'player');
     player.animations.add('left', [0, 1, 2, 3], 10, true);
     player.animations.add('stop', [4], 10, false);
     player.animations.add('right', [5, 6, 7, 8], 10, true);
     game.physics.arcade.enable(player);
-    player.body.gravity.y = 500;
+    player.body.gravity.y = 600;
     player.numberOfJumps = 0;
 
     // make the camera follow the player
@@ -95,11 +94,23 @@ state.create = function(game) {
         ufo.body.gravity.y = 500;        
     });
 
+
+    fgClouds = game.add.tileSprite(0,25, 850, 128, 'cloud');
+    fgClouds.anchor.set(0.5);
+    fgClouds.scale = new Phaser.Point(1.25, 1.25);
 };
 
 function gameOver() {
-    player.kill();
-    title.text = "Game Over";
+    if (player.alive) {
+        player.kill();
+        title.text = "Game Over";
+        var emitter = game.add.emitter(player.x, player.y, 1, 1);
+        emitter.makeParticles('player');
+        emitter.start(true, 5000, null, 1);
+        emitter.forEach(function(particle){
+            particle.body.gravity.y = 500;
+        });
+    }
 }
 
 state.update = function(game) {
@@ -109,16 +120,14 @@ state.update = function(game) {
 
     // walk left and right
     if (cursors.left.isDown) {
-        player.body.velocity.x = -250;
-        player.play('left');
-    }
-    else if (cursors.right.isDown) {
-        player.body.velocity.x = 250;
-        player.play('right');
-    }
-    else {
         player.body.velocity.x = 0;
         player.play('stop');
+    }
+    else {
+        if (player.body.velocity.x < 400) {
+            player.body.velocity.x += 10;        
+        }
+        player.play('right');
     }
 
     // jump
@@ -126,11 +135,13 @@ state.update = function(game) {
         player.numberOfJumps = 0;
     }
     if (!jumpButton.isDown) {
+        player.body.gravity.y = 600;
         jumpButton.wasUp = true;
     }
     if (jumpButton.wasUp && jumpButton.isDown && (player.numberOfJumps < 2)) {
         player.body.velocity.y = -400;
         player.numberOfJumps++;
+        player.body.gravity.y = 300;
         jumpButton.wasUp = false;
     }
 
@@ -144,9 +155,19 @@ state.update = function(game) {
         if (ufo.body.touching.down) {
             ufo.body.velocity.y = -300; // bounce
         }
-        if (player.position.distance(ufo.position) < 30) {
-            if (player.bottom < ufo.bottom) {
+        var boundsA = ufo.getBounds();
+        var boundsB = player.getBounds();
+        if (Phaser.Rectangle.intersects(boundsA, boundsB)) {
+            if (player.alive && player.bottom < ufo.top+10) {
                 ufo.kill();
+                var emitter = game.add.emitter(ufo.x, ufo.y, 1, 1);
+                emitter.makeParticles('ufo');
+                emitter.start(true, 5000, null, 1);
+                emitter.forEach(function(particle){
+                    particle.body.gravity.y = 600;
+                });
+                player.body.velocity.y = -400;
+                player.numberOfJumps = 1;
             }
             else {
                 gameOver();            
@@ -169,20 +190,22 @@ state.update = function(game) {
     // remove old platforms and coins
     platforms.forEachExists(function(platform){
         if (platform.right < player.left - 100) {
-            var emitter = game.add.emitter(platform.right, platform.y, 200);
+            var emitter = game.add.emitter(platform.right, platform.y, 5);
             emitter.makeParticles('platform');
             emitter.start(true, 5000, null, 5);
             emitter.forEach(function(particle){
                 particle.scale = new Phaser.Point(.2,.5);
-                window.lastParticle = particle;
             });
 
             platform.x = platform.left + platform.width*2;
-            platform.y = 300 + Math.random()*300;
+            platform.y = 200 + Math.random()*300;
             var coin = coins.create(platform.x + Math.random()*(platform.width-32), platform.y - 50, 'coin');
             coin.animations.add('spin', null, 10, true);
             coin.play('spin');        
             coin.body.gravity.y = 500;
+
+            var ufo = ufos.create(platform.x + Math.random()*(platform.width-32), platform.y - 50, 'ufo');
+            ufo.body.gravity.y = 500;
         }
     });
 };
@@ -195,6 +218,9 @@ state.render = function(game) {
 
     farClouds.position.x = game.camera.position.x;
     farClouds.tilePosition.x = -game.camera.position.x/2;
+
+    fgClouds.position.x = game.camera.position.x;
+    fgClouds.tilePosition.x = -game.camera.position.x/.98;
 };
 
 var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-game', state);
