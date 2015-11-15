@@ -114,14 +114,21 @@ function gameOver() {
 }
 
 state.update = function(game) {
+    if (player.x-100 > score) {
+        score = player.x-100;
+        scoreText.text = "Score: " + Math.round(score);
+    }
+
     game.physics.arcade.collide(player, platforms);
     game.physics.arcade.collide(coins, platforms);
     game.physics.arcade.collide(ufos, platforms);
 
     // walk left and right
     if (cursors.left.isDown) {
-        player.body.velocity.x = 0;
-        player.play('stop');
+        if (player.body.velocity.x > -400) {
+            player.body.velocity.x -= 10;
+            player.play('left');
+        }
     }
     else {
         if (player.body.velocity.x < 400) {
@@ -182,8 +189,6 @@ state.update = function(game) {
         }
         if (player.position.distance(coin.position) < 30) {
             coin.kill();
-            score = score + 1;
-            scoreText.text = "Score: " + score;
         }
     });
 
