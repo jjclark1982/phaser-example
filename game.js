@@ -165,7 +165,7 @@ state.update = function(game) {
         var boundsA = ufo.getBounds();
         var boundsB = player.getBounds();
         if (Phaser.Rectangle.intersects(boundsA, boundsB)) {
-            if (player.alive && player.bottom < ufo.top+10) {
+            if (player.alive && player.bottom < ufo.top+20) {
                 ufo.kill();
                 var emitter = game.add.emitter(ufo.x, ufo.y, 1, 1);
                 emitter.makeParticles('ufo');
@@ -232,7 +232,7 @@ state.render = function(game) {
     farClouds.tilePosition.x = -game.camera.position.x/2;
 
     fgClouds.position.x = game.camera.position.x;
-    fgClouds.tilePosition.x = -game.camera.position.x/.98;
+    fgClouds.tilePosition.x = -game.camera.position.x/1.5;
 };
 
 var game = new Phaser.Game(800, 600, Phaser.AUTO, 'phaser-game', state);
