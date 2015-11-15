@@ -197,8 +197,15 @@ state.update = function(game) {
                 particle.scale = new Phaser.Point(.2,.5);
             });
 
-            platform.x = platform.left + platform.width*2;
+            var rightmostPoint = 0;
+            platforms.forEach(function(platform){
+                if (platform.right > rightmostPoint) {
+                    rightmostPoint = platform.right;
+                }
+            });
+            platform.x = rightmostPoint + 200;
             platform.y = 200 + Math.random()*300;
+
             var coin = coins.create(platform.x + Math.random()*(platform.width-32), platform.y - 50, 'coin');
             coin.animations.add('spin', null, 10, true);
             coin.play('spin');        
